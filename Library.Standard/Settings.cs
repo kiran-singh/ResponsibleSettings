@@ -8,78 +8,74 @@ namespace Library.Standard
 {
     public class Settings
     {
-        public Settings(IConfiguration dict)
+        public const string FormatErrorMessageMissingEnvironmentVariables = "Cannot start application. Missing environment variables: {0}";
+        public const string FormatErrorMessageInvalidEnvironmentVariables = "Cannot start application. Invalid environment variables: {0}";
+
+        public Settings(IConfiguration configuration)
         {
             var declaredProperties =
                 GetType().GetTypeInfo().DeclaredProperties.ToList();
 
             var missingSettings =
                 (from propertyInfo in declaredProperties
-                    where string.IsNullOrWhiteSpace(dict[propertyInfo.Name])
+                    where string.IsNullOrWhiteSpace(configuration[propertyInfo.Name])
                     select propertyInfo.Name).ToList();
 
             if (missingSettings.Any())
                 throw new Exception(
-                    $"Cannot start application. Missing environment variables: {string.Join(", ", missingSettings)}");
+                    string.Format(FormatErrorMessageMissingEnvironmentVariables, string.Join(", ", missingSettings)));
 
             var invalidSettings = new List<string>();
 
             foreach (var propertyInfo in declaredProperties)
             {
+                var configValue = configuration[propertyInfo.Name];
+
                 if (propertyInfo.PropertyType == typeof(bool))
                 {
-                    var value = dict[propertyInfo.Name];
-                    
-                    if (string.IsNullOrWhiteSpace(value))
-                        invalidSettings.Add(propertyInfo.Name);
+                    if (bool.TryParse(configValue, out var value))
+                        propertyInfo.SetValue(this, value);
                     else
-                        propertyInfo.SetValue(this, value.ToBool());
+                        invalidSettings.Add(propertyInfo.Name);
                 }
 
                 else if (propertyInfo.PropertyType == typeof(DateTime))
                 {
-                    var value = dict[propertyInfo.Name];
-                    
-                    if (string.IsNullOrWhiteSpace(value))
-                        invalidSettings.Add(propertyInfo.Name);
+                    if(DateTime.TryParse(configValue, out var value))
+                        propertyInfo.SetValue(this, value);
                     else
-                        propertyInfo.SetValue(this, value.ToDateTime());
+                        invalidSettings.Add(propertyInfo.Name);
                 }
 
                 else if (propertyInfo.PropertyType == typeof(Guid))
                 {
-                    var value = dict[propertyInfo.Name].ToGuid();
-
-                    if (value == default(Guid))
-                        invalidSettings.Add(propertyInfo.Name);
-                    else
+                    if(Guid.TryParse(configValue, out var value))
                         propertyInfo.SetValue(this, value);
+                    else
+                        invalidSettings.Add(propertyInfo.Name);
                 }
 
                 else if (propertyInfo.PropertyType == typeof(int))
                 {
-                    var value = dict[propertyInfo.Name].ToInt();
-
-                    if (value == default(int))
-                        invalidSettings.Add(propertyInfo.Name);
-                    else
+                    if(int.TryParse(configValue, out var value))
                         propertyInfo.SetValue(this, value);
+                    else
+                        invalidSettings.Add(propertyInfo.Name);
                 }
 
                 else
                 {
-                    var value = dict[propertyInfo.Name];
+                    var value = configValue;
 
                     if (string.IsNullOrWhiteSpace(value))
                         invalidSettings.Add(propertyInfo.Name);
                     else
                         propertyInfo.SetValue(this, value);
                 }
-
-                if (invalidSettings.Any())
-                    throw new Exception(
-                        $"Cannot start application. Invalid environment variables: {string.Join(", ", invalidSettings)}");
             }
+            if (invalidSettings.Any())
+                throw new Exception(
+                    string.Format(FormatErrorMessageInvalidEnvironmentVariables, string.Join(", ", invalidSettings)));
         }
     }
 }
