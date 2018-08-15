@@ -65,15 +65,8 @@ namespace Library.DotNet
                         invalidSettings.Add(propertyInfo.Name);
                 }
 
-                else
-                {
-                    var value = appSetting;
-
-                    if (string.IsNullOrWhiteSpace(value))
-                        invalidSettings.Add(propertyInfo.Name);
-                    else
-                        propertyInfo.SetValue(this, value, null);
-                }
+                else 
+                    propertyInfo.SetValue(this, appSetting, null);
             }
             if (invalidSettings.Any())
                 throw new Exception(

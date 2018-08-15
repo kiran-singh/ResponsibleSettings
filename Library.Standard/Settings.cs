@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Library.Standard
 {
-    public class Settings
+    public abstract class Settings
     {
         public const string FormatErrorMessageMissingEnvironmentVariables = "Cannot start application. Missing environment variables: {0}";
         public const string FormatErrorMessageInvalidEnvironmentVariables = "Cannot start application. Invalid environment variables: {0}";
@@ -64,14 +64,7 @@ namespace Library.Standard
                 }
 
                 else
-                {
-                    var value = configValue;
-
-                    if (string.IsNullOrWhiteSpace(value))
-                        invalidSettings.Add(propertyInfo.Name);
-                    else
-                        propertyInfo.SetValue(this, value);
-                }
+                    propertyInfo.SetValue(this, configValue);
             }
             if (invalidSettings.Any())
                 throw new Exception(
