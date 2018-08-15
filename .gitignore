@@ -8,6 +8,7 @@ packages/*
 
 # Visual Studio Code
 .vscode
+_site
 
 # User-specific files
 *.suo
